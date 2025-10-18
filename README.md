@@ -13,11 +13,11 @@
 
 ## Tech Stack
 - vite
-- React + tailwindcss
+- React + Typescript + tailwindcss
 
 ## 구현요구사항
 - vite build
-- 컴포넌트 설계 - 트리 구조 - app.js는 간단한 구조만
+- 컴포넌트 설계 - 트리 구조 - App.tsx는 간단한 구조만
 - 컴포넌트 구현 - 함수 형태로(Hooks API를 익히는 것에 의미를 둠)
 - useState의 동작 방식 이해하기
 - useEffect에서 비동기 작업 처리, dependencies 파라미터 필요성 이해하기
