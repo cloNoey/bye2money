@@ -1,0 +1,54 @@
+import '../../styles/components/Header.css'
+import docIcon from '../../icons/doc.svg'
+import calendarIcon from '../../icons/calendar.svg'
+import chartIcon from '../../icons/chart.svg'
+import chevronLeftIcon from '../../icons/chevron-left.svg'
+import chevronRightIcon from '../../icons/chevron-right.svg'
+
+export default function Header() {
+  // 현재 날짜 정보
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1; // 0부터 시작하므로 +1
+  const day = currentDate.getDate();
+  
+  // 월 이름을 영어로 변환
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  
+  const monthName = monthNames[month - 1];
+
+  return (
+    <header className="header">
+      <div className="headerContent">
+        <div className="logo">
+          <h1>Wise Wallet</h1>
+        </div>
+        <div className="monthYear">
+          <div className="year">{year}</div>
+          <div className="dayContainer">
+            <img src={chevronLeftIcon} alt="previous day" className="chevronIcon" />
+            <div className="day">{day}</div>
+            <img src={chevronRightIcon} alt="next day" className="chevronIcon" />
+          </div>
+          <div className="month">{monthName}</div>
+        </div>
+        <nav className="tab">
+          <ul className="tabList">
+            <li className="tabItem">
+              <img src={docIcon} alt="document" className="tabIcon" />
+            </li>
+            <li className="tabItem">
+              <img src={calendarIcon} alt="calendar" className="tabIcon" />
+            </li>
+            <li className="tabItem">
+              <img src={chartIcon} alt="chart" className="tabIcon" />
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+  )
+}
