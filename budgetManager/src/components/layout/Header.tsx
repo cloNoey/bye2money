@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import '../../styles/components/Header.css'
-import docIcon from '../../icons/doc.svg'
-import calendarIcon from '../../icons/calendar.svg'
-import chartIcon from '../../icons/chart.svg'
-import chevronLeftIcon from '../../icons/chevron-left.svg'
-import chevronRightIcon from '../../icons/chevron-right.svg'
+import docIcon from '../../assets/icons/doc.svg'
+import calendarIcon from '../../assets/icons/calendar.svg'
+import chartIcon from '../../assets/icons/chart.svg'
+import chevronLeftIcon from '../../assets/icons/chevron-left.svg'
+import chevronRightIcon from '../../assets/icons/chevron-right.svg'
 
 export default function Header() {
   // useState로 현재 날짜 상태 관리
