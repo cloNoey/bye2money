@@ -17,6 +17,7 @@ export default function MainPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // 초기 로드: Local Storage에서 저장된 결제수단 불러오기
   useEffect(() => {
@@ -36,6 +37,10 @@ export default function MainPage() {
 
   const handleTabChange = (tab: 'doc' | 'calendar' | 'chart') => {
     setActiveTab(tab);
+  };
+
+  const handleMonthChange = (date: Date) => {
+    setCurrentDate(date);
   };
 
   const handleOpenPaymentModal = () => {
@@ -80,7 +85,7 @@ export default function MainPage() {
       case 'doc':
         return <DocumentPage onOpenPaymentModal={handleOpenPaymentModal} allPayments={allPayments} onOpenDeleteConfirm={handleOpenDeleteConfirm} onAddTransaction={handleAddTransaction} transactions={transactions} />;
       case 'calendar':
-        return <CalendarPage />;
+        return <CalendarPage currentDate={currentDate} transactions={transactions} />;
       case 'chart':
         return <ChartPage />;
       default:
@@ -90,7 +95,7 @@ export default function MainPage() {
 
   return (
     <div className="mainPage">
-      <Header activeTab={activeTab} onTabChange={handleTabChange} />
+      <Header activeTab={activeTab} onTabChange={handleTabChange} currentDate={currentDate} onMonthChange={handleMonthChange} />
       {renderContent()}
 
       {/* Payment Modal */}

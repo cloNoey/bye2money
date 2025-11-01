@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import docIcon from '../../assets/icons/doc.svg'
 import calendarIcon from '../../assets/icons/calendar.svg'
 import chartIcon from '../../assets/icons/chart.svg'
@@ -8,24 +7,23 @@ import chevronRightIcon from '../../assets/icons/chevron-right.svg'
 interface HeaderProps {
   activeTab: 'doc' | 'calendar' | 'chart';
   onTabChange: (tab: 'doc' | 'calendar' | 'chart') => void;
+  currentDate: Date;
+  onMonthChange: (date: Date) => void;
 }
 
-export default function Header({ activeTab, onTabChange }: HeaderProps) {
-  // useState로 현재 날짜 상태 관리
-  const [currentDate, setCurrentDate] = useState(new Date());
-  
+export default function Header({ activeTab, onTabChange, currentDate, onMonthChange }: HeaderProps) {
   // 이전 달로 이동하는 함수
   const handlePreviousMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentDate(newDate);
+    onMonthChange(newDate);
   };
-  
+
   // 다음 달로 이동하는 함수
   const handleNextMonth = () => {
     const newDate = new Date(currentDate);
     newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentDate(newDate);
+    onMonthChange(newDate);
   };
 
   // 현재 날짜 정보 계산
@@ -41,11 +39,11 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const monthName = monthNames[month - 1];
 
   return (
-    <header className="h-[216px] bg-10 flex justify-center border-b border-neutral-border-default relative">
-      <div className="w-[846px] h-[112px] mx-auto flex items-center justify-between relative top-[40px]">
+    <header className="h-[216px] bg-80 flex justify-center border-b border-neutral-border-default relative">
+      <div className="w-[846px] h-[112px] flex items-center justify-between absolute top-[40px] left-[297px]">
         {/* Logo */}
         <div className="shrink-0">
-          <h1 className="text-[24px] text-neutral-text-default" style={{ fontFamily: 'ChosunIlboMyungjo, serif' }}>
+          <h1 className="w-[132px] text-[24px] text-neutral-text-default" style={{ fontFamily: 'ChosunIlboMyungjo, serif' }}>
             Wise Wallet
           </h1>
         </div>
