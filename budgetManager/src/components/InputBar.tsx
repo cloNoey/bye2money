@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import minusIcon from '../assets/icons/minus.svg';
 import plusIcon from '../assets/icons/plus.svg';
 import addButtonIcon from '../assets/icons/addBtn.svg';
-import checkboxIcon from '../assets/icons/checkbox.svg';
+import addButtonActiveIcon from '../assets/icons/addBtnActive.svg';
 import chevronIcon from '../assets/icons/chevron-down.svg';
 import closedIcon from '../assets/icons/closed.svg';
 
@@ -25,9 +25,11 @@ interface InputBarProps {
   allPayments: string[];
   onOpenDeleteConfirm: (payment: string) => void;
   onAddTransaction: (transaction: Transaction) => void;
+  editingTransaction?: Transaction | null;
+  onCancelEdit?: () => void;
 }
 
-export default function InputBar({ onOpenPaymentModal, allPayments, onOpenDeleteConfirm, onAddTransaction }: InputBarProps) {
+export default function InputBar({ onOpenPaymentModal, allPayments, onOpenDeleteConfirm, onAddTransaction, editingTransaction, onCancelEdit }: InputBarProps) {
   const [date, setDate] = useState(new Date());
   const [dateInput, setDateInput] = useState('');
   const [amount, setAmount] = useState('');
@@ -42,6 +44,42 @@ export default function InputBar({ onOpenPaymentModal, allPayments, onOpenDelete
   useEffect(() => {
     setDateInput(formatDate(date));
   }, []);
+
+  // editingTransaction 변경시 form에 값 채우기 또는 초기화
+  useEffect(() => {
+    if (editingTransaction) {
+      const [year, month, day] = editingTransaction.date.split('.');
+      setDate(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)));
+      setDateInput(editingTransaction.date);
+      setAmount(editingTransaction.amount);
+      setDescription(editingTransaction.description);
+      setSelectedPayment(editingTransaction.payment);
+      setSelectedCategory(editingTransaction.category);
+      setTransactionType(editingTransaction.type);
+    } else {
+      // editingTransaction이 null이 되면 form 초기화
+      setDateInput(formatDate(new Date()));
+      setDate(new Date());
+      setAmount('');
+      setDescription('');
+      setSelectedPayment(null);
+      setSelectedCategory(null);
+      setTransactionType('expense');
+    }
+  }, [editingTransaction]);
+
+  // 수정 모드에서 변경사항 감지
+  const isModified = (): boolean => {
+    if (!editingTransaction) return false;
+    return (
+      dateInput !== editingTransaction.date ||
+      amount !== editingTransaction.amount ||
+      description !== editingTransaction.description ||
+      selectedPayment !== editingTransaction.payment ||
+      selectedCategory !== editingTransaction.category ||
+      transactionType !== editingTransaction.type
+    );
+  };
 
   // 날짜 포맷: Date 객체 → "YYYY.MM.DD" 문자열
   const formatDate = (dateObj: Date): string => {
@@ -158,12 +196,15 @@ export default function InputBar({ onOpenPaymentModal, allPayments, onOpenDelete
     setSelectedPayment(null);
     setSelectedCategory(null);
     setTransactionType('expense');
+
+    // 수정 모드 해제
+    onCancelEdit?.();
   };
 
   const divider = <div className="w-[0.5px] h-[44px] bg-neutral-text-default" />;
   return (
-    <div className="absolute top-[176px] left-[273px]">
-        <div className="w-[894px] h-[76px] flex items-center justify-between bg-neutral-surface-default border border-neutral-border-default" 
+    <div className="absolute top-[176px] left-[273px]" data-inputbar>
+        <div className="w-[894px] h-[76px] flex items-center justify-between bg-neutral-surface-default border border-neutral-border-default"
             style={{ padding: '16px 24px' }}>
             {/* date */}
             <div className="flex flex-col w-[88px] h-[44px] gap-[4px]">
@@ -302,13 +343,13 @@ export default function InputBar({ onOpenPaymentModal, allPayments, onOpenDelete
             {/* select icon */}
             <button
               onClick={handleAddButtonClick}
-              disabled={!isAllFieldsFilled()}
+              disabled={editingTransaction ? !isModified() || !isAllFieldsFilled() : !isAllFieldsFilled()}
               className="w-[40px] h-[40px] flex items-center justify-center"
-              title="내역 추가">
+              title={editingTransaction ? "수정 완료" : "내역 추가"}>
               <img
                 className="w-[40px] h-[40px]"
-                src={isAllFieldsFilled() ? checkboxIcon : addButtonIcon}
-                alt="add button"
+                src={(editingTransaction ? isModified() && isAllFieldsFilled() : isAllFieldsFilled()) ? addButtonActiveIcon : addButtonIcon}
+                alt={editingTransaction ? "confirm button" : "add button"}
               />
             </button>
         </div>
