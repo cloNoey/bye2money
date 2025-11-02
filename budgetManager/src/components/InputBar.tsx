@@ -12,6 +12,7 @@ const CATEGORIES = {
 };
 
 export interface Transaction {
+  id?: number;
   date: string;
   amount: string;
   description: string;

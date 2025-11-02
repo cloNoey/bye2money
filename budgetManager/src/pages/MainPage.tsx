@@ -6,14 +6,12 @@ import ChartPage from './ChartPage'
 import PaymentModal from '../components/PaymentModal'
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog'
 import type { Transaction } from '../components/InputBar'
-
-const STORAGE_KEY = 'allPayments';
-const DEFAULT_PAYMENTS = ['현금', '신용카드'];
+import { transactionApi, paymentApi } from '../api/client';
 
 export default function MainPage() {
   const [activeTab, setActiveTab] = useState<'doc' | 'calendar' | 'chart'>('doc');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [allPayments, setAllPayments] = useState<string[]>(DEFAULT_PAYMENTS);
+  const [allPayments, setAllPayments] = useState<string[]>([]);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmType, setDeleteConfirmType] = useState<'payment' | 'transaction'>('payment');
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
@@ -24,20 +22,25 @@ export default function MainPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingTransactionIndex, setEditingTransactionIndex] = useState<number | null>(null);
 
-  // 초기 로드: Local Storage에서 저장된 결제수단 불러오기
+  // 초기 로드: 백엔드에서 결제수단 및 거래 데이터 불러오기
   useEffect(() => {
-    const savedPayments = localStorage.getItem(STORAGE_KEY);
-    if (savedPayments) {
+    const loadInitialData = async () => {
       try {
-        setAllPayments(JSON.parse(savedPayments));
+        const [payments, transactionsData] = await Promise.all([
+          paymentApi.getAll(),
+          transactionApi.getAll()
+        ]);
+        setAllPayments(payments);
+        setTransactions(transactionsData);
       } catch (error) {
-        console.error('Failed to parse saved payments:', error);
-        setAllPayments(DEFAULT_PAYMENTS);
+        console.error('Failed to load initial data:', error);
+        // 오류 시 빈 배열로 초기화
+        setAllPayments([]);
+        setTransactions([]);
       }
-    } else {
-      // 처음 방문 시 기본값 저장
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PAYMENTS));
-    }
+    };
+
+    loadInitialData();
   }, []);
 
   const handleTabChange = (tab: 'doc' | 'calendar' | 'chart') => {
@@ -52,12 +55,15 @@ export default function MainPage() {
     setIsPaymentModalOpen(true);
   };
 
-  const handleAddPayment = (newPayment: string) => {
-    const updatedPayments = [...allPayments, newPayment];
-    setAllPayments(updatedPayments);
-    // Local Storage에 저장
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPayments));
-    setIsPaymentModalOpen(false);
+  const handleAddPayment = async (newPayment: string) => {
+    try {
+      await paymentApi.create(newPayment);
+      setAllPayments([...allPayments, newPayment]);
+      setIsPaymentModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add payment:', error);
+      alert('결제수단 추가에 실패했습니다.');
+    }
   };
 
   const handleOpenDeleteConfirm = (payment: string) => {
@@ -66,23 +72,34 @@ export default function MainPage() {
     setIsDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteConfirmType === 'payment' && paymentToDelete) {
-      const updatedPayments = allPayments.filter(p => p !== paymentToDelete);
-      setAllPayments(updatedPayments);
-      // Local Storage에 저장
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPayments));
-      setIsDeleteConfirmOpen(false);
-      setPaymentToDelete(null);
-    } else if (deleteConfirmType === 'transaction' && transactionToDeleteIndex !== null) {
-      // 1초 지연 후 삭제
-      setTimeout(() => {
-        const updatedTransactions = transactions.filter((_, i) => i !== transactionToDeleteIndex);
-        setTransactions(updatedTransactions);
+  const handleConfirmDelete = async () => {
+    try {
+      if (deleteConfirmType === 'payment' && paymentToDelete) {
+        await paymentApi.delete(paymentToDelete);
+        const updatedPayments = allPayments.filter(p => p !== paymentToDelete);
+        setAllPayments(updatedPayments);
         setIsDeleteConfirmOpen(false);
-        setTransactionToDelete(null);
-        setTransactionToDeleteIndex(null);
-      }, 1000);
+        setPaymentToDelete(null);
+      } else if (deleteConfirmType === 'transaction' && transactionToDelete && transactionToDelete.id !== undefined) {
+        // 1초 지연 후 삭제
+        const transactionId = transactionToDelete.id;
+        setTimeout(async () => {
+          try {
+            await transactionApi.delete(transactionId);
+            const updatedTransactions = transactions.filter((_, i) => i !== transactionToDeleteIndex);
+            setTransactions(updatedTransactions);
+            setIsDeleteConfirmOpen(false);
+            setTransactionToDelete(null);
+            setTransactionToDeleteIndex(null);
+          } catch (error) {
+            console.error('Failed to delete transaction:', error);
+            alert('거래 삭제에 실패했습니다.');
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Failed to delete:', error);
+      alert('삭제에 실패했습니다.');
     }
   };
 
@@ -115,18 +132,26 @@ export default function MainPage() {
     setEditingTransactionIndex(null);
   };
 
-  const handleAddTransaction = (transaction: Transaction) => {
-    if (editingTransactionIndex !== null) {
-      // 수정 모드: 기존 거래 업데이트
-      const updatedTransactions = transactions.map((t, i) =>
-        i === editingTransactionIndex ? transaction : t
-      );
-      setTransactions(updatedTransactions);
-      setEditingTransaction(null);
-      setEditingTransactionIndex(null);
-    } else {
-      // 추가 모드: 새 거래 추가
-      setTransactions([...transactions, transaction]);
+  const handleAddTransaction = async (transaction: Transaction) => {
+    try {
+      if (editingTransactionIndex !== null && transactions[editingTransactionIndex]?.id) {
+        // 수정 모드: 기존 거래 업데이트
+        const transactionId = transactions[editingTransactionIndex].id;
+        await transactionApi.update(transactionId, transaction);
+        const updatedTransactions = transactions.map((t, i) =>
+          i === editingTransactionIndex ? { ...transaction, id: transactionId } : t
+        );
+        setTransactions(updatedTransactions);
+        setEditingTransaction(null);
+        setEditingTransactionIndex(null);
+      } else {
+        // 추가 모드: 새 거래 추가
+        const newTransaction = await transactionApi.create(transaction);
+        setTransactions([...transactions, newTransaction]);
+      }
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+      alert('거래 저장에 실패했습니다.');
     }
   };
 
